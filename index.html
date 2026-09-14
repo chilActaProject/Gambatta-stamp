@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>がんばった すたんぷ</title>
+  <style>
+    body { 
+      font-family: 'Helvetica Neue', Arial, sans-serif; 
+      text-align: center; 
+      padding: 10px; 
+      background-color: #f7f9fc; 
+      color: #333;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 20px; }
+    
+    .grid { 
+      display: grid; 
+      grid-template-columns: repeat(2, 1fr); 
+      gap: 20px; 
+      max-width: 280px; 
+      margin: 0 auto; 
+      padding: 10px;
+    }
+    
+    .cell { 
+      width: 100px; 
+      height: 100px; 
+      border: 4px solid #4a90e2; 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      cursor: pointer; 
+      font-size: 50px; 
+      background: #fff; 
+      margin: auto;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: transform 0.1s;
+      overflow: hidden;
+    }
+    
+    .cell:active { transform: scale(0.95); }
+    .cell img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* モーダル共通スタイル */
+    .modal-overlay { 
+      display: none; 
+      position: fixed; 
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      z-index: 99;
+    }
+    .modal-content { 
+      position: fixed; 
+      top: 50%; left: 50%; 
+      transform: translate(-50%, -50%); 
+      width: 85%; 
+      max-width: 360px;
+      max-height: 80vh;
+      overflow-y: auto;
+      background: white; 
+      padding: 20px; 
+      border-radius: 25px; 
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3); 
+      z-index: 100; 
+    }
+
+    /* ✖ 閉じるボタン */
+    .modal-close-icon {
+      position: absolute;
+      top: 12px;
+      right: 15px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #aaa;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+      border-radius: 50%;
+      transition: background 0.2s, color 0.2s;
+    }
+    .modal-close-icon:hover {
+      background: #f0f0f0;
+      color: #333;
+    }
+    
+    /* タブスタイル */
+    .tab-container {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      min-height: 35px;
+    }
+    .tab-btn {
+      padding: 6px 12px;
+      font-size: 13px;
+      border-radius: 15px;
+      border: 2px solid #4a90e2;
+      background: #fff;
+      color: #4a90e2;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .tab-btn.active { background: #4a90e2; color: #fff; }
+
+    #options { min-height: 120px; }
+
+    .stamp-option { 
+      font-size: 45px; cursor: pointer; margin: 10px; display: inline-block; 
+      vertical-align: middle; width: 50px; height: 50px; line-height: 50px;
+    }
+    .stamp-option img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+    .btn-action { margin-top: 15px; padding: 10px 24px; font-size: 15px; border-radius: 50px; border: none; font-weight: bold; cursor: pointer; }
+    .close-btn { background: #f0f0f0; color: #666; }
+    .add-btn { background: #ff9800; color: #fff; margin-bottom: 10px; }
+    .submit-btn { background: #4caf50; color: #fff; }
+    .submit-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    .notice-box {
+      background: #fff9c4;
+      border: 2px dashed #fbc02d;
+      border-radius: 15px;
+      padding: 12px;
+      text-align: left;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #5d4037;
+      margin: 10px 0;
+    }
+    .notice-title { font-weight: bold; text-align: center; margin-bottom: 6px; font-size: 14px; }
+    .checkbox-label { display: block; margin-top: 10px; font-weight: bold; font-size: 13px; cursor: pointer; text-align: left; }
+    .input-field { width: 90%; padding: 10px; border-radius: 10px; border: 1px solid #ccc; font-size: 14px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>がんばった すたんぷ</h1>
+  <div class="grid" id="grid"></div>
+
+  <!-- 背景オーバーレイ -->
+  <div id="overlay" class="modal-overlay" onclick="closeAllModals()"></div>
+
+  <!-- スタンプ選択モーダル -->
+  <div id="modal" class="modal-content" style="display:none;">
+    <span class="modal-close-icon" onclick="closeModal()">✖</span>
+    <p style="font-weight:bold; margin-top:5px;">どの すたんぷに する？</p>
+    
+    <div id="tabs" class="tab-container"></div>
+    <div id="options"></div>
+    
+    <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+    <button class="btn-action add-btn" onclick="openAddModal()">＋ じぶんのスタンプを追加</button><br>
+    <button class="btn-action close-btn" onclick="closeModal()">やめる</button>
+  </div>
+
+  <!-- カスタムスタンプ追加モーダル -->
+  <div id="addModal" class="modal-content" style="display:none;">
+    <span class="modal-close-icon" onclick="closeAddModal()">✖</span>
+    <p style="font-weight:bold; margin-top:5px;">すきなスタンプをつけくわえる</p>
+    
+    <div style="margin: 15px 0;">
+      <p style="font-size:12px; color:#888; margin: 0 0 8px;">絵文字を入力</p>
+      <input type="text" id="customInput" class="input-field" placeholder="絵文字を入力（例：⭐ 💖 🎉）" oninput="handleTextSelect()">
+    </div>
+
+    <div id="previewArea" style="margin: 10px 0; min-height: 50px; display:flex; align-items:center; justify-content:center;">
+      <span style="font-size:12px; color:#aaa;">（えらんだ絵文字がここにでます）</span>
+    </div>
+
+    <label class="checkbox-label">
+      <input type="checkbox" id="consentCheck" onchange="toggleSubmitBtn()">
+      ルールを守って追加します
+    </label>
+
+    <button id="submitBtn" class="btn-action submit-btn" disabled onclick="submitCustomStamp()">追加する</button><br>
+    <button class="btn-action close-btn" onclick="closeAddModal()">キャンセル</button>
+  </div>
+
+  <script>
+    // デフォルトの標準マスター
+    const DEFAULT_MASTER = {
+      'のりもの': ['🚓', '🚒', '🚐', '🚗','🚜','🚑','🏎','🛵','🛺','🚙','🚎','🚌','🚢','🛫','🚀'],
+      'かわいい': ['🌸', '🎀', '🧸', '🐱','🐰','⭐','🍓','🎂','🌟'],
+      'たべもの':['🍹','🍕','🍫','🍦','🍩','🍰','🍐','🍉','🍎','🍓'],
+      'どうぶつ':['🐶','🐱','🐭','🐰','🐴','🐮','🐯','🐵','🐤','🐻','🐹','🐷','🦁','🐨','🐸','🐺']
+    };
+
+    let stampMaster = {};
+    let stampCells = {};
+    let selectedCell = null;
+    let currentSelectedStampData = "";
+
+    // ローカルストレージからのデータ読み込み
+    function loadData() {
+      const savedData = localStorage.getItem('stampData');
+      if (savedData) {
+        const data = JSON.parse(savedData);
+        stampMaster = data.master || JSON.parse(JSON.stringify(DEFAULT_MASTER));
+        stampCells = data.cells || {};
+      } else {
+        stampMaster = JSON.parse(JSON.stringify(DEFAULT_MASTER));
+        stampMaster['オリジナル'] = [];
+        stampCells = {};
+        saveData();
+      }
+
+      // 押印済スタンプの復元
+      for (let i = 1; i <= 10; i++) {
+        const cell = document.getElementById('cell-' + i);
+        if (cell && stampCells[i]) {
+          setCellContent(cell, stampCells[i]);
+        }
+      }
+    }
+
+    // ローカルストレージへの保存
+    function saveData() {
+      localStorage.setItem('stampData', JSON.stringify({
+        master: stampMaster,
+        cells: stampCells
+      }));
+    }
+
+    function saveMaster() {
+      saveData();
+    }
+
+    function saveCellStamp(index, val) {
+      if (val === "") {
+        delete stampCells[index];
+      } else {
+        stampCells[index] = val;
+      }
+      saveData();
+    }
+
+    // グリッド生成
+    const grid = document.getElementById('grid');
+    for(let i=1; i<=10; i++) {
+      let div = document.createElement('div');
+      div.className = 'cell';
+      div.id = 'cell-' + i;
+      div.onclick = () => { 
+        if (div.innerText !== "") {
+          if (confirm("このスタンプをリセットしますか？")) {
+            div.innerHTML = "";
+            saveCellStamp(i, "");
+          }
+        } else {
+          selectedCell = div; 
+          openModal();
+        }
+      };
+      grid.appendChild(div);
+    }
+
+    function setCellContent(element, val) {
+      element.innerText = val;
+    }
+
+    /* モーダル開閉 */
+    function openModal() {
+      document.getElementById('overlay').style.display = 'block';
+      document.getElementById('modal').style.display = 'block';
+      renderTabs();
+    }
+
+    function closeModal() {
+      document.getElementById('overlay').style.display = 'none';
+      document.getElementById('modal').style.display = 'none';
+    }
+
+    function openAddModal() {
+      closeModal();
+      document.getElementById('overlay').style.display = 'block';
+      document.getElementById('addModal').style.display = 'block';
+    }
+
+    function closeAddModal() {
+      document.getElementById('overlay').style.display = 'none';
+      document.getElementById('addModal').style.display = 'none';
+      document.getElementById('customInput').value = '';
+      document.getElementById('consentCheck').checked = false;
+      document.getElementById('submitBtn').disabled = true;
+      currentSelectedStampData = "";
+      showPreview("");
+    }
+
+    function closeAllModals() {
+      closeModal();
+      closeAddModal();
+    }
+
+    /* 絵文字選択処理 */
+    function handleTextSelect() {
+      const val = document.getElementById('customInput').value.trim();
+      currentSelectedStampData = val;
+      showPreview(val);
+      toggleSubmitBtn();
+    }
+
+    function showPreview(val) {
+      const previewArea = document.getElementById('previewArea');
+      if (!val) {
+        previewArea.innerHTML = '<span style="font-size:12px; color:#aaa;">（えらんだ絵文字がここにでます）</span>';
+        return;
+      }
+      previewArea.innerHTML = '';
+      const span = document.createElement('span');
+      span.className = 'stamp-option';
+      setCellContent(span, val);
+      previewArea.appendChild(span);
+    }
+
+    function toggleSubmitBtn() {
+      const checked = document.getElementById('consentCheck').checked;
+      const hasData = currentSelectedStampData !== "";
+      document.getElementById('submitBtn').disabled = !(checked && hasData);
+    }
+
+    // カスタムスタンプの追加（即時保存）
+    function submitCustomStamp() {
+      if (!currentSelectedStampData) return;
+
+      if (!stampMaster['オリジナル']) {
+        stampMaster['オリジナル'] = [];
+      }
+      stampMaster['オリジナル'].push(currentSelectedStampData);
+      saveMaster();
+
+      closeAddModal();
+      openModal();
+    }
+
+    // スタンプ描画
+    function renderStamps(category) {
+      const options = document.getElementById('options');
+      options.innerHTML = '';
+      
+      const stamps = stampMaster[category] || [];
+      if (stamps.length === 0) {
+        options.innerHTML = '<p style="font-size:12px; color:#888; margin-top:30px;">スタンプがありません</p>';
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+
+      stamps.forEach(s => {
+        let span = document.createElement('span');
+        span.className = 'stamp-option';
+        setCellContent(span, s);
+        span.onclick = () => {
+          const index = selectedCell.id.replace('cell-', '');
+          setCellContent(selectedCell, s);
+          saveCellStamp(index, s);
+          closeModal();
+        };
+        fragment.appendChild(span);
+      });
+
+      options.appendChild(fragment);
+    }
+
+    // タブ描画
+    function renderTabs() {
+      const tabsContainer = document.getElementById('tabs');
+      tabsContainer.innerHTML = '';
+      const categories = Object.keys(stampMaster);
+      const fragment = document.createDocumentFragment();
+      
+      categories.forEach((cat, index) => {
+        let btn = document.createElement('button');
+        btn.className = 'tab-btn' + (index === 0 ? ' active' : '');
+        btn.innerText = cat;
+        btn.onclick = () => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          renderStamps(cat);
+        };
+        fragment.appendChild(btn);
+      });
+
+      tabsContainer.appendChild(fragment);
+
+      if (categories.length > 0) {
+        renderStamps(categories[0]);
+      }
+    }
+
+    // 初期化
+    window.onload = () => {
+      loadData();
+    };
+  </script>
+</body>
+</html>
