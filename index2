@@ -188,7 +188,7 @@
 
     <label class="checkbox-label">
       <input type="checkbox" id="consentCheck" onchange="toggleSubmitBtn()">
-      ルールを守って追加します
+      GUIDEを読んだ上で、ルールを守って追加します
     </label>
 
     <button id="submitBtn" class="btn-action submit-btn" disabled onclick="submitCustomStamp()">追加する</button><br>
@@ -199,7 +199,7 @@
     // デフォルトの標準マスター
     const DEFAULT_MASTER = {
       'のりもの': ['🚓', '🚒', '🚐', '🚗','🚜','🚑','🏎','🛵','🛺','🚙','🚎','🚌','🚢','🛫','🚀'],
-      'かわいい': ['🌸', '🎀', '🧸', '🐱','🐰','⭐','🍓','🎂','🌟'],
+      'かわいい': ['🌸', '🎀', '🧸', '🐱','🐰','⭐','🍓','🎂'],
       'たべもの':['🍹','🍕','🍫','🍦','🍩','🍰','🍐','🍉','🍎','🍓'],
       'どうぶつ':['🐶','🐱','🐭','🐰','🐴','🐮','🐯','🐵','🐤','🐻','🐹','🐷','🦁','🐨','🐸','🐺']
     };
